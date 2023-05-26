@@ -5,6 +5,7 @@ from flask import Flask, jsonify, request, make_response
 from werkzeug.middleware.proxy_fix import ProxyFix
 import xml.etree.ElementTree as ET
 from config import setup_log, config
+from ai import get_mathpix_response
 
 WX_TOKEN = 'math'
 
@@ -34,20 +35,28 @@ def wechat():
             # 判断请求来源，并对接受的请求转换为utf-8后进行sha1加密
             response = make_response(echostr)
             # response.headers['content-type'] = 'text' 
-            return response        
+            return response
         else:
-            xml = ET.fromstring(request.data)
-            toUser = xml.find('ToUserName').text
-            fromUser = xml.find('FromUserName').text
-            msgType = xml.find("MsgType").text
-
-            if msgType == 'text':
-                content = xml.find('Content').text
-                return reply_text(
-                    fromUser, toUser, get_response(
-                        fromUser, content))
-            else:
-                return reply_text(fromUser, toUser, "嗯？我听不太懂")
+             return 'error', 403 
+    else:
+        xml = ET.fromstring(request.data)
+        toUser = xml.find('ToUserName').text
+        fromUser = xml.find('FromUserName').text
+        msgType = xml.find("MsgType").text
+        app.logger.info(f"fromUser {fromUser} msgType {msgType}")
+        if msgType == 'text':
+            content = xml.find('Content').text
+            app.logger.info(f"content: {content}")
+            return reply_text(
+                fromUser, toUser, get_response(
+                    fromUser, content))
+        elif msgType == 'image':
+            picUrl = xml.find('PicUrl').text
+            # result = get_mathpix_response(picUrl)
+            print("picUrl", picUrl)
+            return reply_text(fromUser, toUser, picUrl)
+        else:
+            return reply_text(fromUser, toUser, "嗯？我听不太懂")
 
 def reply_text(to_user, from_user, content):
     reply = """

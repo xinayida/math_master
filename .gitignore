@@ -2,3 +2,5 @@
 /.vscode
 /uwsgi/*
 /static/mlog
+test.py
+/__pycache__
