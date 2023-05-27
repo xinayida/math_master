@@ -1,22 +1,27 @@
 import hashlib
 import time
-from ai import get_response
+from ai import get_ai_response, get_mathpix_response
 from flask import Flask, jsonify, request, make_response
 from werkzeug.middleware.proxy_fix import ProxyFix
 import xml.etree.ElementTree as ET
 from config import setup_log, config
-from ai import get_mathpix_response
+
+# import os
+# app_id = os.getenv("MATHPIX_APP_ID")
+# app_key = os.getenv("MATHPIX_APP_KEY")
 
 WX_TOKEN = 'math'
+# EncodingAESKey = os.getenv("WX_AES_KEY")
 
 app = Flask(__name__)
 app.config.from_object(config)
 setup_log("testing")  #使用日志
 
-app.wsgi_app = ProxyFix(
-    app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
-)
+# app.logger.info(f"appid ${app_id} app_key ${app_key}")
 
+# app.wsgi_app = ProxyFix(
+#     app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
+# )
 
 @app.route('/wechat_api/', methods=['GET', 'POST'])
 # 定义路由地址请与URL后的保持一致
@@ -46,15 +51,20 @@ def wechat():
         app.logger.info(f"fromUser {fromUser} msgType {msgType}")
         if msgType == 'text':
             content = xml.find('Content').text
-            app.logger.info(f"content: {content}")
-            return reply_text(
-                fromUser, toUser, get_response(
-                    fromUser, content))
+            # app.logger.info(f"content: {content}")
+            # result = get_ai_response(content)
+            # return reply_text(fromUser, toUser, result)
+            return reply_text(fromUser,toUser, "暂不支持")
         elif msgType == 'image':
             picUrl = xml.find('PicUrl').text
-            # result = get_mathpix_response(picUrl)
-            print("picUrl", picUrl)
-            return reply_text(fromUser, toUser, picUrl)
+            code, result = get_mathpix_response(picUrl)
+            if(code == 200):
+                return reply_text(fromUser, toUser, result)
+                # explain = get_ai_response(result)
+                # response = f"${explain}\n\n LaTeX: ${result}"
+                # return reply_text(fromUser, toUser, response)
+            else:
+                return reply_text(fromUser, toUser, result)
         else:
             return reply_text(fromUser, toUser, "嗯？我听不太懂")
 
@@ -72,7 +82,7 @@ def reply_text(to_user, from_user, content):
     response.content_type = 'application/xml'
     return response
 
-@app.route('/hello')
+@app.route('/')
 def hello():
     return jsonify({'message': 'Hello, World!'})
 

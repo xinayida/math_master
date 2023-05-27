@@ -1,6 +1,5 @@
 /venv
 /.vscode
 /uwsgi/*
-/static/mlog
-test.py
+/static
 /__pycache__
