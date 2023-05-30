@@ -1,23 +1,24 @@
 import hashlib
 import time
-from ai import get_ai_response, get_mathpix_response
+import multiprocessing
+import threading
+from ai import get_ai_explain, get_ai_title, get_mathpix_response
 from flask import Flask, jsonify, request, make_response
-from werkzeug.middleware.proxy_fix import ProxyFix
+# from werkzeug.middleware.proxy_fix import ProxyFix
 import xml.etree.ElementTree as ET
 from config import setup_log, config
-
-# import os
-# app_id = os.getenv("MATHPIX_APP_ID")
-# app_key = os.getenv("MATHPIX_APP_KEY")
+import time
+import logging
+from notion import createPage, queryPage
 
 WX_TOKEN = 'math'
-# EncodingAESKey = os.getenv("WX_AES_KEY")
+DB_URL = "https://rocky-pufferfish-0c8.notion.site/72c8dc936632419dac502e5625d45805?v=b988da68a78943afa17c83173cf25b6a"
 
 app = Flask(__name__)
 app.config.from_object(config)
-setup_log("testing")  #使用日志
+setup_log()  #使用日志
 
-# app.logger.info(f"appid ${app_id} app_key ${app_key}")
+# logging.info(f"appid ${app_id} app_key ${app_key}")
 
 # app.wsgi_app = ProxyFix(
 #     app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
@@ -48,25 +49,30 @@ def wechat():
         toUser = xml.find('ToUserName').text
         fromUser = xml.find('FromUserName').text
         msgType = xml.find("MsgType").text
-        app.logger.info(f"fromUser {fromUser} msgType {msgType}")
+        logging.info(f"fromUser {fromUser} msgType {msgType}")
         if msgType == 'text':
             content = xml.find('Content').text
-            # app.logger.info(f"content: {content}")
+            # logging.info(f"content: {content}")
             # result = get_ai_response(content)
             # return reply_text(fromUser, toUser, result)
-            return reply_text(fromUser,toUser, "暂不支持")
+            sideTask("",content)
+            return reply_text(fromUser,toUser, f"请在此网址查看解释:${DB_URL}")
         elif msgType == 'image':
             picUrl = xml.find('PicUrl').text
+            response = f"请在此网址查看解释:${DB_URL}"
+            # sideTask(picUrl, "")
+            # return reply_text(fromUser, toUser, response)
             code, result = get_mathpix_response(picUrl)
+            # logging.info("ocr: ", code, result)
             if(code == 200):
-                return reply_text(fromUser, toUser, result)
-                # explain = get_ai_response(result)
-                # response = f"${explain}\n\n LaTeX: ${result}"
-                # return reply_text(fromUser, toUser, response)
+                sideTask(picUrl, result)
+                response = f"LaTeX: \n{result}\n\n请在此网址查看解释:{DB_URL}"
+                return reply_text(fromUser, toUser, response)
             else:
                 return reply_text(fromUser, toUser, result)
         else:
             return reply_text(fromUser, toUser, "嗯？我听不太懂")
+        
 
 def reply_text(to_user, from_user, content):
     reply = """
@@ -81,6 +87,23 @@ def reply_text(to_user, from_user, content):
                                       str(int(time.time())), content))
     response.content_type = 'application/xml'
     return response
+
+def sideTask(imageUrl, latex):
+    p = multiprocessing.Process(target=postToNotion, args=(imageUrl, latex))
+    p.start()
+    # thread = threading.Thread(target=postToNotion, args=(imageUrl, latex))
+    # thread.start()
+
+##根据给出的公式，提取公式名称和公式解释，并post到Notion的Database
+def postToNotion(imageUrl, latex):
+    title = get_ai_title(latex)
+    queryResult = queryPage(title)
+    # 如果已经有这个公式则不需要重复添加
+    if len(queryResult.get("results", [])) > 0:
+        logging.info("duplicate latex")
+        return
+    explain = get_ai_explain(latex)
+    createPage(image_url=imageUrl, title=title, latex=latex, explain=explain)
 
 @app.route('/')
 def hello():

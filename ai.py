@@ -2,6 +2,7 @@ import os
 import json
 import requests
 import openai
+import logging
 
 app_id = os.getenv("MATHPIX_APP_ID")
 app_key = os.getenv("MATHPIX_APP_KEY")
@@ -36,21 +37,31 @@ def get_mathpix_response(img):
     except requests.exceptions.RequestException as e:
         return (0, str(e))
 
-
-def get_ai_response(formula):
-    prompt = (f"请解释这个 LaTeX 公式的含义: ${formula}$\\n"
-              f"并解释每个参数的含义是什么?")
-    print("call openai API ...")
+def get_ai_title(formula):
+    formatStr = formula.replace("\\", "\\\\").strip('\"\"\"')
+    prompt = (f"请用中文回复<>中包含的公式的名称是什么? Please return the answer without embellish and punctuation mark. If it's not formula reply 'None' directly. ``` <{formatStr}> ```")
+    logging.info(f"call openai API for title ...")
     message = get_completion(prompt)
-    print(message)
+    logging.info(message)
+    return message
+
+def get_ai_explain(formula):
+    prompt = (f"请解释这个 LaTeX 公式的含义: <{formula}>\\n"
+              f"并解释每个参数的含义是什么?")
+    logging.info("call openai API for explain ...")
+    message = get_completion(prompt)
+    logging.info(message)
     return message
 
 
 def get_completion(prompt, model="gpt-3.5-turbo"):
-    messages = [{"role": "user", "content": prompt}]
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=messages,
-        temperature=0, # this is the degree of randomness of the model's output
-    )
-    return response.choices[0].message["content"]
+    try:
+        messages = [{"role": "user", "content": prompt}]
+        response = openai.ChatCompletion.create(
+            model=model,
+            messages=messages,
+            temperature=0, # this is the degree of randomness of the model's output
+        )
+        return response.choices[0].message["content"]
+    except:
+        return "None"
