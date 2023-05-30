@@ -13,7 +13,7 @@ from notion import createPage, queryPage
 
 WX_TOKEN = 'math'
 DB_URL = "https://rocky-pufferfish-0c8.notion.site/72c8dc936632419dac502e5625d45805?v=b988da68a78943afa17c83173cf25b6a"
-
+responseStr = f"稍后请在此网址查看解释:${DB_URL}"
 app = Flask(__name__)
 app.config.from_object(config)
 setup_log()  #使用日志
@@ -56,17 +56,16 @@ def wechat():
             # result = get_ai_response(content)
             # return reply_text(fromUser, toUser, result)
             sideTask("",content)
-            return reply_text(fromUser,toUser, f"请在此网址查看解释:${DB_URL}")
+            return reply_text(fromUser,toUser, responseStr)
         elif msgType == 'image':
             picUrl = xml.find('PicUrl').text
-            response = f"请在此网址查看解释:${DB_URL}"
             # sideTask(picUrl, "")
             # return reply_text(fromUser, toUser, response)
             code, result = get_mathpix_response(picUrl)
             # logging.info("ocr: ", code, result)
             if(code == 200):
                 sideTask(picUrl, result)
-                response = f"LaTeX: \n{result}\n\n请在此网址查看解释:{DB_URL}"
+                response = f"LaTeX: \n{result}\n\n {responseStr}"
                 return reply_text(fromUser, toUser, response)
             else:
                 return reply_text(fromUser, toUser, result)
