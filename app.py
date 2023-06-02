@@ -13,7 +13,7 @@ from notion import createPage, queryPage
 
 WX_TOKEN = 'math'
 DB_URL = "https://rocky-pufferfish-0c8.notion.site/72c8dc936632419dac502e5625d45805?v=b988da68a78943afa17c83173cf25b6a"
-responseStr = f"稍后请在此网址查看解释:${DB_URL}"
+responseStr = f"稍后请在此网址查看解释:{DB_URL}"
 app = Flask(__name__)
 app.config.from_object(config)
 setup_log()  #使用日志
@@ -96,11 +96,11 @@ def sideTask(imageUrl, latex):
 ##根据给出的公式，提取公式名称和公式解释，并post到Notion的Database
 def postToNotion(imageUrl, latex):
     title = get_ai_title(latex)
-    queryResult = queryPage(title)
-    # 如果已经有这个公式则不需要重复添加
-    if len(queryResult.get("results", [])) > 0:
-        logging.info("duplicate latex")
-        return
+    # queryResult = queryPage(title)
+    # # 如果已经有这个公式则不需要重复添加
+    # if len(queryResult.get("results", [])) > 0:
+    #     logging.info("duplicate latex")
+    #     return
     explain = get_ai_explain(latex)
     createPage(image_url=imageUrl, title=title, latex=latex, explain=explain)
 
