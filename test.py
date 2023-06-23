@@ -28,6 +28,13 @@ P\left(X=x \mid Y=c_{k}\right) & =P\left(X^{(1)}=x^{(1)}, \cdots, X^{(n)}=x^{(n)
 
 formula2 = "\begin{aligned}P\left(X=x \mid Y=c_{k}\right) & =P\left(X^{(1)}=x^{(1)}, \cdots, X^{(n)}=x^{(n)} \mid Y=c_{k}\right) \\& =\prod_{j=1}^{n} P\left(X^{(j)}=x^{(j)} \mid Y=c_{k}\right)\end{aligned}"
 
+formula3 = """
+\\rho_{i}=\\frac{1}{Q} e^{-\\epsilon_{i} / k T}=\\frac{e^{-\\epsilon_{i} / k T}}{\\sum_{j=1}^{M} e^{-\\epsilon_{j} / k T}}
+"""
+
+explain = get_ai_explain(formula3)
+print(explain)
+
 # notion.createPage(image_url, "朴素贝叶斯公式", formula, explain)
 
 # postToNotion(image_url, formula)
@@ -53,7 +60,7 @@ formula2 = "\begin{aligned}P\left(X=x \mid Y=c_{k}\right) & =P\left(X^{(1)}=x^{(
 #     print(f"~err~ ${result}")
 
 #获取公式标题
-get_ai_title(formula)
+# get_ai_title(formula)
 # get_ai_title("\begin{aligned}P\left(X=x \mid Y=c_{k}\right) & =P\left(X^{(1)}=x^{(1)}, \cdots, X^{(n)}=x^{(n)} \mid Y=c_{k}\right) \\& =\prod_{j=1}^{n} P\left(X^{(j)}=x^{(j)} \mid Y=c_{k}\right)\end{aligned}")
 # get_ai_title(formula)
 # print(formula)

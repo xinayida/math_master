@@ -4,6 +4,7 @@ import requests
 import openai
 import logging
 
+GPT_MODEL = "gpt-3.5-turbo-0613"
 app_id = os.getenv("MATHPIX_APP_ID")
 app_key = os.getenv("MATHPIX_APP_KEY")
 openai.api_key  = os.getenv("OPEN_API_KEY")
@@ -54,7 +55,7 @@ def get_ai_explain(formula):
     return message
 
 
-def get_completion(prompt, model="gpt-3.5-turbo"):
+def get_completion(prompt, model=GPT_MODEL):
     try:
         messages = [{"role": "user", "content": prompt}]
         response = openai.ChatCompletion.create(
@@ -63,5 +64,5 @@ def get_completion(prompt, model="gpt-3.5-turbo"):
             temperature=0, # this is the degree of randomness of the model's output
         )
         return response.choices[0].message["content"]
-    except:
-        return "None"
+    except requests.exceptions.RequestException as e:
+        return (0, str(e))
